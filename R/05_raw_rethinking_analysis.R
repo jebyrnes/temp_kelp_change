@@ -64,7 +64,7 @@ kelp_fit_world <- map2stan(kelp_mod, data=kelp_data_to_fit %>% mutate(Group = "W
                            constraints=list(sd_e = "lower=0"), 
                            start=list(sd_e = rep(1,length(unique(kelp_data$Site)))))
 
-save(kelp_fit, file="rethinking_kelp_fit_world.Rdata")
+save(kelp_fit_world, file="rethinking_kelp_fit_world.Rdata")
 
 
 kelp_fit_realm <- map2stan(kelp_mod, data=kelp_data_to_fit %>% mutate(Group = kelp_data$REALM),
@@ -72,7 +72,7 @@ kelp_fit_realm <- map2stan(kelp_mod, data=kelp_data_to_fit %>% mutate(Group = ke
                               constraints=list(sd_e = "lower=0"), 
                               start=list(sd_e = rep(1,length(unique(kelp_data$Site)))))
 
-save(kelp_fit, file="rethinking_kelp_fit_realm.Rdata")
+save(kelp_fit_realm, file="rethinking_kelp_fit_realm.Rdata")
 
 
 
@@ -81,7 +81,7 @@ kelp_fit_province <- map2stan(kelp_mod, data=kelp_data_to_fit %>% mutate(Group =
                               constraints=list(sd_e = "lower=0"), 
                               start=list(sd_e = rep(1,length(unique(kelp_data$Site)))))
 
-save(kelp_fit, file="rethinking_kelp_fit_province.Rdata")
+save(kelp_fit_province, file="rethinking_kelp_fit_province.Rdata")
 
 
 
