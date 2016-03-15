@@ -2,8 +2,8 @@ library(rethinking)
 library(dplyr)
 
 kelpdata <- read.csv("./test.csv") %>%
-  dplyr::rename(Group = EcoregionName, Site = SiteName, x = Year, Study = StudyName) %>%
-  dplyr::select(Group, Site, x, y, Study) %>%
+  dplyr::rename(Group = EcoregionName, Site = SiteName, x = Year, Study = StudyName, focalUnit = Unit) %>%
+  dplyr::select(Group, Site, x, y, Study, focalUnit) %>%
   dplyr::mutate(x = x - mean(x)) #Dan does this in the stan_functions.R file
 
 kelp_mod <- alist(
@@ -14,6 +14,7 @@ kelp_mod <- alist(
   y_loc <- beta_mu_int[Group] + beta_int[Site] + 
     (beta_slope[Site] + beta_mu_slope[Group])*x,#expectation equation
   
+  #,A[SiteMethod[i]]
   sd_loc <- sd_e[Study],
   
   #priors
@@ -26,12 +27,14 @@ kelp_mod <- alist(
   
   Rho_Site ~ dlkjcorr(2.0), # vague priors for the ranef corr matrix
   
-  sd_e[Study] ~ dcauchy(0,1) #prior for study level errors
+  sd_e[Study] ~ dcauchy(0,A), #prior for study level errors
+  A[focalUnit] ~ dunif(0.000001, 3) #hyperprior for method-based error
 )
 
 
 kelp_fit <- map2stan(kelp_mod, data=kelpdata, chains=2, cores=2,
                      constraints=list(sd_e = "lower=0"), 
-                     start=list(sd_e = rep(1,length(unique(kelpdata$Study)))))
+                     start=list(sd_e = rep(1,length(unique(kelpdata$Study))),
+                                A = rep(1,4)))
 
 save(kelp_fit, file="rethinking_kelp_fit.Rdata")

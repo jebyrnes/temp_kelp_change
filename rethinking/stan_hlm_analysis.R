@@ -4,10 +4,10 @@
 ###  Author:  D.K. Okamoto                         ###
 ######################################################
 
-library(rstan);
-library(plyr);library(gdata);library(ggplot2)
-library(parallel);library(grid);library(coda);library(scales);library(reshape2)
-library(quantreg)
+library(rstan);library(dplyr)
+library(gdata);library(ggplot2)
+library(parallel);library(grid);library(scales);library(coda);library(rdrop2)
+library(plyr);library(quantreg)
 
 cat("Stan version:", stan_version(), "\n")
 rstan_options(auto_write = TRUE)
@@ -37,7 +37,8 @@ source("stan_functions.R")
 
   
 ### Load Data ###
-kelpdata <- read.csv("./test.csv", stringsAsFactors=FALSE)
+kelpdata <- read.csv("./test.csv", stringsAsFactors=FALSE) %>%
+  dplyr::rename(SiteMethod = Unit)
 
   
 ### order data
