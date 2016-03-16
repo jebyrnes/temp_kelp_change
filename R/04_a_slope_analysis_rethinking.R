@@ -13,7 +13,14 @@ ksm <- kelp_slopes_merged
 ksm <- ksm %>% filter(!is.na(maxWaveChangeAnnualSample)) %>%
   filter(!is.na(meanTempChangeAnnualSample)) %>%
   rename(slope = mean, slope_se = se) %>%
-  mutate(abs_lat = abs(Latitude))
+  mutate(abs_lat = abs(Latitude)) %>%
+  #standardize
+  mutate(abs_lat = scale(abs_lat),
+         Duration=scale(Duration),
+         se_maxWaveChangeAnnualSample=se_maxWaveChangeAnnualSample/sd(maxWaveChangeAnnualSample),
+         se_maxTempChangeAnnualSample=se_maxTempChangeAnnualSample/sd(maxTempChangeAnnualSample),
+         maxWaveChangeAnnualSample=scale(maxWaveChangeAnnualSample),
+         maxTempChangeAnnualSample=scale(maxTempChangeAnnualSample))
 
 #Model
 
@@ -76,4 +83,50 @@ kelp_slope_fit <-
                       waves_est = ksm$maxWaveChangeAnnualSample,
                       slope_est = ksm$slope))
 
+save(kelp_slope_fit, file="../chain_output/kelp_slope_fit.Rdata")
 
+### Model without latitude
+kelp_slope_nolat_mod <- alist(
+  
+  
+  #likelihoods
+  slope_est ~ dnorm(slope_hat, true_se_slope),
+  
+  #link function
+  slope_hat <- b0 + 
+    b1 * Duration + 
+    b3 * waves_est[i] +
+    b4 * temp_est[i] +
+    b6 * Duration * waves_est[i] +
+    b7 * Duration * temp_est[i] +
+    b10 * waves_est[i] * temp_est[i] +
+    b13 * Duration * waves_est[i] * temp_est[i],
+
+  #observation error
+  slope ~ dnorm(slope_est, slope_se),
+  maxWaveChangeAnnualSample ~ dnorm(waves_est, se_maxWaveChangeAnnualSample),
+  maxTempChangeAnnualSample ~ dnorm(temp_est, se_maxTempChangeAnnualSample),
+  
+  #priors
+  b0 ~ dnorm(0,10),
+  b1 ~ dnorm(0,10),
+  b3 ~ dnorm(0,10),
+  b4 ~ dnorm(0,10),
+  b6 ~ dnorm(0,10),
+  b7 ~ dnorm(0,10),
+  b10 ~ dnorm(0,10),
+  b13 ~ dnorm(0,10),
+  
+  true_se_slope ~ dunif(0,20)
+)
+
+kelp_slope_nolat_fit <- 
+  map2stan(kelp_slope_nolat_mod,
+           data=ksm,
+           ncores=4,
+           chains=4,
+           start=list(temp_est = ksm$maxTempChangeAnnualSample,
+                      waves_est = ksm$maxWaveChangeAnnualSample,
+                      slope_est = ksm$slope))
+
+save(kelp_slope_nolat_fit, file="../chain_output/kelp_slope_nolat_fit.Rdata")
