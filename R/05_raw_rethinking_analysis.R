@@ -19,7 +19,7 @@ kelp_data <- read.csv("../derived_data/raw_data_merged.csv", stringsAsFactors=FA
   
 
 kelp_data_to_fit <- kelp_data %>%
-  select(y, Year_c, Group, Site, max_waves_c, mean_tempC_c, abs_lat)
+  select(y, Year_c, Group, Site, max_waves_c, max_tempC_anomoly, abs_lat)
 
 kelp_mod <- alist(
   #likelihood
@@ -52,7 +52,7 @@ kelp_mod <- alist(
 )
 
 
-kelp_fit <- map2stan(kelp_mod, data=kelp_data_to_fit, chains=4, cores=4,
+kelp_fit <- map2stan(kelp_mod, data=kelp_data_to_fit, chains=4, cores=4, 
                      constraints=list(sd_e = "lower=0"), 
                      start=list(sd_e = rep(1,length(unique(kelp_data$Site)))))
 
