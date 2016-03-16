@@ -1,8 +1,9 @@
 library(dplyr)
 library(readr)
+library(tidyr)
 
 ###### 1) Load the slope data file and raw data file
-kelp_slopes <- read.csv("../../temporal_change/github_repo/06_HLM_output/site_slopes.csv", stringsAsFactors=F)
+kelp_slopes <- read.csv("../../temporal_change/github_repo/06_HLM_output/site_slopes_3_points.csv", stringsAsFactors=F)
 
 raw_data <- read.csv("../../temporal_change/github_repo/05_HLM_analysis_code/formatted_data_3years.csv", stringsAsFactors=F) %>%
   arrange(StudySite) %>%
@@ -26,7 +27,7 @@ kelp_slopes <- kelp_slopes %>% filter(parameter=="site_slope") %>%
 ###### 3) Filter the environmenta; data to annual summaries
 hadsst_kelp_annual <- hadsst_kelp %>%
   group_by(Latitude, Longitude, Year) %>%
-  dplyr::summarise(mean_tempC = mean(tempC, na.rm=T), max_tempC = max(tempC, na.rm=T))
+  dplyr::summarise(mean_tempC = mean(tempC, na.rm=T), max_tempC = quantile(tempC, probs=0.9, na.rm=T))
 
 waves_annual <- all_waves_data %>%
   group_by(Latitude, Longitude, Year) %>%
@@ -36,16 +37,30 @@ envt_annual <- left_join(hadsst_kelp_annual, waves_annual)
 
 #qplot(Year, mean_waves, color=paste(Latitude, Longitude), geom="line", 
 #      data=envt_annual, alpha=I(0.3)) +
-#\  scale_color_discrete(guide="none") 
+#  scale_color_discrete(guide="none") 
 
 
 ###### 4) For each unique lat/long/duration combo, extract
 ###### the linear trend in annual mean and annual max temperature
-hadsst_trends_long <- group_by(envt_annual, Latitude, Longitude) %>%
-  do(data.frame(maxTempChangeAnnual=coef(lm(max_tempC ~ Year, data=.))[2],
-                meanTempChangeAnnual=coef(lm(mean_tempC ~ Year, data=.))[2]))
+slopeSE <- function(x) sqrt(diag(vcov(x)))[2]
 
-#qplot(Longitude, Latitude, color=meanTempChangeAnnual, data=haddsst_trends_long) +
+hadsst_trends_long <- envt_annual %>%
+  filter(!is.na(mean_tempC)) %>%
+  group_by(Latitude, Longitude) %>%
+  nest() %>%
+  mutate(maxTempMod = purrr::map(data, ~lm(max_tempC ~ Year, data=.)),
+         meanTempMod = purrr::map(data, ~lm(mean_tempC ~ Year, data=.))) %>%
+  
+  #coefs and SEs
+  mutate(maxTempChangeAnnual= purrr::map_dbl(maxTempMod, ~coef(.)[2]),
+         se_maxTempChangeAnnual = purrr::map_dbl(maxTempMod, ~slopeSE(.)),
+         meanTempChangeAnnual=purrr::map_dbl(meanTempMod, ~coef(.)[2]),
+         se_meanTempChangeAnnual = purrr::map_dbl(meanTempMod, ~sqrt(diag(vcov(.)))[2])
+  )  %>%
+  dplyr::select(-data, -maxTempMod, -meanTempMod) %>%
+  ungroup()
+
+#qplot(Longitude, Latitude, color=meanTempChangeAnnual, data=hadsst_trends_long) +
 #  borders("world") +
 #  scale_color_gradientn(colors=rev(RColorBrewer::brewer.pal(7,"RdBu"))) +
 #  theme_bw()
@@ -70,18 +85,46 @@ getSlopeCoef <- function(adf){
   #print(adf)
   #print(subdata)
   
-  ret <- data.frame(minYear = adf$minYear, maxYear=adf$maxYear,
-    maxTempChangeAnnualSample = coef(lm(max_tempC ~ Year, data=subdata))[2],
-             meanTempChangeAnnualSample=coef(lm(mean_tempC ~ Year, data=subdata))[2])
-  
+  #ret <- data.frame(minYear = adf$minYear, maxYear=adf$maxYear,
+  #  maxTempChangeAnnualSample = coef(lm(max_tempC ~ Year, data=subdata))[2],
+  #           meanTempChangeAnnualSample=coef(lm(mean_tempC ~ Year, data=subdata))[2])
+  if(sum(is.na(subdata$mean_tempC))!=nrow(subdata)){
+    ret <- subdata %>% 
+      nest() %>%
+      mutate(maxTempChangeAnnualSample_lm =purrr::map(data, ~lm(max_tempC ~ Year, data=.))) %>%
+      mutate(meanTempChangeAnnualSample_lm =purrr::map(data, ~lm(mean_tempC ~ Year, data=.))) %>%
+    
+      mutate(minYear =adf$minYear,
+           maxYear = adf$maxYear,
+           maxTempChangeAnnualSample= purrr::map_dbl(maxTempChangeAnnualSample_lm, ~coef(.)[2]),
+           se_maxTempChangeAnnualSample = purrr::map_dbl(maxTempChangeAnnualSample_lm, ~slopeSE(.)),
+           meanTempChangeAnnualSample=purrr::map_dbl(meanTempChangeAnnualSample_lm, ~coef(.)[2]),
+           se_meanTempChangeAnnualSample = purrr::map_dbl(meanTempChangeAnnualSample_lm, ~sqrt(diag(vcov(.)))[2])
+      ) %>% 
+      dplyr::select(-data, -maxTempChangeAnnualSample_lm, 
+                  -meanTempChangeAnnualSample_lm, -Latitude, -Longitude)
+  }else{
+    ret <- data.frame(minYear = adf$minYear, maxYear=adf$maxYear,
+                      maxTempChangeAnnualSample=NA,
+                      se_maxTempChangeAnnualSample=NA,
+                      meanTempChangeAnnualSample=NA,
+                      se_meanTempChangeAnnualSample=NA)
+  }
+  ###
   if(sum(!is.na(subdata$mean_waves))==adf$maxYear-adf$minYear+1){
-    wave_ret <- data.frame(maxWaveChangeAnnualSample = coef(lm(max_waves ~ Year, data=subdata))[2],
-                           meanWaveChangeAnnualSample = coef(lm(mean_waves ~ Year, data=subdata))[2],
+    maxwavemod <- lm(max_waves ~ Year, data=subdata)
+    meanwavemod <- lm(mean_waves ~ Year, data=subdata)
+    wave_ret <- data.frame(maxWaveChangeAnnualSample = coef(maxwavemod)[2],
+                           se_maxWaveChangeAnnualSample = slopeSE(maxwavemod),
+                           meanWaveChangeAnnualSample = coef(meanwavemod)[2],
+                           se_maxWaveChangeAnnualSample = slopeSE(meanwavemod),
                            bigWaveYears = sum(subdata$max_waves>8))
     
   }else{
     wave_ret <- data.frame(maxWaveChangeAnnualSample = NA, 
+                           se_maxWaveChangeAnnualSample=NA,
                            meanWaveChangeAnnualSample = NA,
+                           se_maxWaveChangeAnnualSample = NA,
                            bigWaveYears=NA)
   }
   
@@ -99,7 +142,22 @@ raw_data_merged <- left_join(raw_data, envt_annual)
 kelp_slopes_merged <- left_join(kelp_slopes, 
                                 right_join(hadsst_trends_long, sample_data_slopes))
 
-###### 6) Write out merged slope and raw data sets
+###### 6) Calculate temperature anomolies for raw data
+unique_region_temp <- read.csv("../derived_data/hadsst_regions.csv", stringsAsFactors=F) %>%
+  group_by(ECOREGION, Year) %>%
+  dplyr::summarise(mean_tempC = mean(tempC),
+                   max_tempC = quantile(tempC, 0.9)) %>%
+  ungroup() %>%
+  group_by(ECOREGION) %>%
+  dplyr::summarise(mean_tempC_region = mean(mean_tempC),
+                   max_tempC_region = mean(max_tempC))
+
+raw_data_merged <- left_join(raw_data_merged, unique_region_temp) %>%
+  mutate(mean_tempC_anomoly = mean_tempC - mean_tempC_region,
+         max_tempC_anomoly = max_tempC - max_tempC_region) %>%
+  dplyr::select(-mean_tempC_region, -max_tempC_region)
+
+###### 7) Write out merged slope and raw data sets
 
 write_csv(raw_data_merged, "../derived_data/raw_data_merged.csv")
 write_csv(kelp_slopes_merged, "../derived_data/kelp_slopes_merged.csv")

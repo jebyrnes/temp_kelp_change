@@ -14,6 +14,7 @@ bll <- SpatialPoints(as.matrix(bad_latLongs[,2:1]))
 
 #see roughly where they fall
 plot(meanWaves_a[[1]])
+plot(hadsst[[1]])
 plot(bll, add=T)
 
 #define an extent - plot the hadsst or meanwaves data and grab it using
