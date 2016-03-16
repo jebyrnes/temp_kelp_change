@@ -33,7 +33,7 @@ unique_lat_long$cell <- all_cells
 unique_cells <- unique(all_cells)
 
 hadsst_kelp_vals <- raster::extract(hadsst_subset, 
-                                    unique_cells) #max to avoid -1000 error
+                                    unique_cells) 
 
 unique_cell_frame <- data.frame(cell = unique_cells, hadsst_kelp_vals)
 
@@ -89,8 +89,8 @@ ht <- left_join(unique_lat_long, unique_cell_frame) %>%
 hadsst_kelp <- ht %>%
   gather(DateName, tempC, -Latitude, -Longitude) %>%
   mutate(DateName = gsub("X", "", as.character(DateName))) %>%
-  mutate(Year = year(parse_date_time(DateName, orders="ymd"))) %>%
-  mutate(tempC=ifelse(tempC == -1000, NA, tempC))
+  mutate(Year = year(parse_date_time(DateName, orders="ymd")))# %>%
+#  mutate(tempC=ifelse(tempC == -1000, NA, tempC))
   
 
 ###### 5) Write out temp kelp data as an intermediate step

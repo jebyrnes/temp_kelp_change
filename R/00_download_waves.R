@@ -5,12 +5,6 @@ archiveURL <- "ftp://polar.ncep.noaa.gov/pub/history/waves/"
 
 fileStrings <- c("nww3.hs", "multi_1.glo_30m.hs")
 
-#fsu
-#uf
-#lsu
-#mississippi/alabama
-
-
 
 waveFiles <- strsplit(getURL(archiveURL,verbose=TRUE,ftp.use.epsv=TRUE,dirlistonly = TRUE), "\n")[[1]]
 waveFiles <- waveFiles[-grep("MD5", waveFiles)]
@@ -48,7 +42,8 @@ for (i in c(nww3, multi)){
   
   #make the new rasters
   WavesMean <- calc(Waves, mean)
-  WavesMax <- calc(Waves, max)
+#  WavesMax <- calc(Waves, max)
+  WavesMax <- calc(Waves, function(x) quantile(x, 0.9, na.rm=T)) #90% percentile
   
   #set their dates
   WavesMean@z$Date <- aDate

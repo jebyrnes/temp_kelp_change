@@ -24,7 +24,7 @@ raw_data <- read.csv("../../temporal_change/github_repo/05_HLM_analysis_code/for
 ###### 2) Extract unique lat/long info from raw data
 unique_lat_long <- raw_data %>%
   group_by(Latitude, Longitude) %>%
-  summarise(len=length(unique(trajectory_ID))) %>% ungroup()
+  dplyr::summarise(len=length(unique(trajectory_ID))) %>% ungroup()
 
 ###### 3) Load the wave data 
 ww3Dir <- "~/Dropbox/wavewatch3/"
