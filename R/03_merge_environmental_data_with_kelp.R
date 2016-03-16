@@ -117,7 +117,7 @@ getSlopeCoef <- function(adf){
     wave_ret <- data.frame(maxWaveChangeAnnualSample = coef(maxwavemod)[2],
                            se_maxWaveChangeAnnualSample = slopeSE(maxwavemod),
                            meanWaveChangeAnnualSample = coef(meanwavemod)[2],
-                           se_maxWaveChangeAnnualSample = slopeSE(meanwavemod),
+                           se_meanWaveChangeAnnualSample = slopeSE(meanwavemod),
                            bigWaveYears = sum(subdata$max_waves>8))
     
   }else{
