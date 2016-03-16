@@ -29,9 +29,9 @@ kelp_mod <- alist(
   #model
   y_loc <- beta_mu_int[Group] + beta_int[Site] + 
     (beta_slope_year[Site] + beta_mu_slope_year[Group])*Year_c +
-    (beta_slope_temp[Site] + beta_mu_slope_temp[Group])*mean_tempC_c + 
+    (beta_slope_temp[Site] + beta_mu_slope_temp[Group])*max_tempC_anomoly + 
     (beta_slope_waves[Site] + beta_mu_slope_waves[Group])*max_waves_c +
-    (beta_slope_temp_waves[Site] + beta_mu_slope_temp_waves[Group])*mean_tempC_c*max_waves_c
+    (beta_slope_temp_waves[Site] + beta_mu_slope_temp_waves[Group])*max_tempC_anomoly*max_waves_c
     ,#expectation equation
   
   sd_loc <- sd_e[Site],
@@ -91,14 +91,14 @@ kelp_lat_global_mod <- alist(
   #model
   y_loc <- beta_mu_int + beta_int[Site] + 
     (beta_slope_year[Site] + beta_mu_slope_year)*Year_c +
-    (beta_slope_temp[Site] + beta_mu_slope_temp)*mean_tempC_c + 
+    (beta_slope_temp[Site] + beta_mu_slope_temp)*max_tempC_anomoly + 
     (beta_slope_waves[Site] + beta_mu_slope_waves)*max_waves_c +
     (beta_slope_lat[Site] + beta_mu_slope_lat)*abs_lat +
-    (beta_slope_temp_waves[Site] + beta_mu_slope_temp_waves)*mean_tempC_c*max_waves_c +
-    (beta_slope_temp_lat[Site] + beta_mu_slope_temp_lat)*mean_tempC_c*abs_lat +
+    (beta_slope_temp_waves[Site] + beta_mu_slope_temp_waves)*max_tempC_anomoly*max_waves_c +
+    (beta_slope_temp_lat[Site] + beta_mu_slope_temp_lat)*max_tempC_anomoly*abs_lat +
     (beta_slope_lat_waves[Site] + beta_mu_slope_lat_waves)*abs_lat*max_waves_c +
-    (beta_slope_temp_waves[Site] + beta_mu_slope_temp_waves)*mean_tempC_c*max_waves_c +
-    (beta_slope_temp_waves_lat[Site] + beta_mu_slope_temp_waves_lat)*mean_tempC_c*max_waves_c * abs_lat 
+    (beta_slope_temp_waves[Site] + beta_mu_slope_temp_waves)*max_tempC_anomoly*max_waves_c +
+    (beta_slope_temp_waves_lat[Site] + beta_mu_slope_temp_waves_lat)*max_tempC_anomoly*max_waves_c * abs_lat 
   ,#expectation equation
   
   sd_loc <- sd_e[Site],
