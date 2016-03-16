@@ -49,7 +49,7 @@ qplot(maxTempChangeAnnualSample,mean, data=kelp_slopes_merged,  geom="jitter",
 ###### REAL META-ANALYSIS
 
 all_factors_mod <- rma.mv(mean, V=se^2, mods = ~ Duration*
-               meanWaveChangeAnnualSample*maxTempChangeAnnualSample*I(abs(Latitude)), 
+               maxWaveChangeAnnualSample*maxTempChangeAnnualSample*I(abs(Latitude)), 
              data=ksm, random =~ 1 |Study)
 
 all_factors_mod
@@ -65,12 +65,12 @@ qplot(maxTempChangeAnnualSample,
   stat_smooth(method="lm")
 
 
-qplot(meanWaveChangeAnnualSample,mean, 
+qplot(maxWaveChangeAnnualSample,mean, 
        data=ksm) +
   scale_color_gradientn(colors=RColorBrewer::brewer.pal(7,"RdBu")) +
   theme_bw(base_size=17) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
-  xlab("\nSlope of Annual Change in Wave Height (m) During Sample Period") +
+  xlab("\nSlope of Annual Change in 90th Percentile Wave Height (m) During Sample Period") +
   facet_grid(DurationBreaks ~ LatBreaks,) +
   stat_smooth(method="lm")
 
