@@ -13,14 +13,14 @@ ksm <- kelp_slopes_merged
 ksm <- ksm %>% filter(!is.na(maxWaveChangeAnnualSample)) %>%
   filter(!is.na(meanTempChangeAnnualSample)) %>%
   rename(slope = mean, slope_se = se) %>%
-  mutate(abs_lat = abs(Latitude)) %>%
+  mutate(abs_lat = abs(Latitude)) #%>%
   #standardize
-  mutate(abs_lat = scale(abs_lat),
-         Duration=scale(Duration),
-         se_maxWaveChangeAnnualSample=se_maxWaveChangeAnnualSample/sd(maxWaveChangeAnnualSample),
-         se_maxTempChangeAnnualSample=se_maxTempChangeAnnualSample/sd(maxTempChangeAnnualSample),
-         maxWaveChangeAnnualSample=scale(maxWaveChangeAnnualSample),
-         maxTempChangeAnnualSample=scale(maxTempChangeAnnualSample))
+  # mutate(abs_lat = as.numeric(scale(abs_lat)),
+  #        Duration=as.numeric(scale(Duration)),
+  #        se_maxWaveChangeAnnualSample=se_maxWaveChangeAnnualSample/sd(maxWaveChangeAnnualSample),
+  #        se_maxTempChangeAnnualSample=se_maxTempChangeAnnualSample/sd(maxTempChangeAnnualSample),
+  #        maxWaveChangeAnnualSample=as.numeric(scale(maxWaveChangeAnnualSample)),
+  #        maxTempChangeAnnualSample=as.numeric(scale(maxTempChangeAnnualSample)))
 
 #Model
 
@@ -82,6 +82,8 @@ kelp_slope_fit <-
            start=list(temp_est = ksm$maxTempChangeAnnualSample,
                       waves_est = ksm$maxWaveChangeAnnualSample,
                       slope_est = ksm$slope))
+
+precis(kelp_slope_fit)
 
 save(kelp_slope_fit, file="../chain_output/kelp_slope_fit.Rdata")
 
