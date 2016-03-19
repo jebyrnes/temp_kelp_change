@@ -21,7 +21,8 @@ kelp_data <- read.csv("../derived_data/raw_data_merged.csv", stringsAsFactors=FA
 
 kelp_rstan_mod <- stan_glmer(y ~ Year_c+
                                max_waves_c*max_tempC_anomoly*abs_lat +
-                               (max_waves_c*max_tempC_anomoly|ECOREGION/Site),
+                               (1+Year_c|ECOREGION) +
+                               (1+Year_c|ECOREGION/Site),
                              data=kelp_data, family=gaussian(link="log"))
 
 #summary(kelp_rstan_mod)
@@ -29,6 +30,6 @@ kelp_rstan_mod <- stan_glmer(y ~ Year_c+
 save(kelp_rstan_mod, file="../HLM_output/kelp_rstan_mod")
 
 posterior_interval(kelp_rstan_mod, prob = 0.9, type = "central", 
-                   pars = c("(Intercept)", "Year_c", "max_waves_c", "mean_tempC", "abs_lat",
-                            "max_waves_c:mean_tempC", "max_waves_c:abs_lat", "mean_tempC:abs_lat",
-                            "max_waves_c:mean_tempC:abs_lat"))
+                   pars = c("(Intercept)", "Year_c", "max_waves_c", "max_tempC_anomoly", "abs_lat",
+                            "max_waves_c:max_tempC_anomoly", "max_waves_c:abs_lat", "max_tempC_anomoly:abs_lat",
+                            "max_waves_c:max_tempC_anomoly:abs_lat"))

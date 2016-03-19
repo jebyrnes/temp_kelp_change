@@ -83,7 +83,12 @@ save(kelp_fit_province, file="rethinking_kelp_fit_province.Rdata")
 
 
 
-precis(kelp_fit_world, depth=2, pars=c("beta_mu_int", "beta_mu_slope_year",
+precis(kelp_fit, depth=2, pars=c("beta_mu_int", "beta_mu_slope_year",
+                                          "beta_mu_slope_year", "beta_mu_slope_temp",
+                                          "beta_mu_slope_waves", "beta_mu_slope_temp_waves"))
+
+
+precis(kelp_fit_province, depth=2, pars=c("beta_mu_int", "beta_mu_slope_year",
                                        "beta_mu_slope_year", "beta_mu_slope_temp",
                                        "beta_mu_slope_waves", "beta_mu_slope_temp_waves"))
 
@@ -117,6 +122,7 @@ kelp_lat_global_mod <- alist(
   beta_mu_slope_temp_waves ~ dnorm(0,10),
   beta_mu_slope_lat_waves ~ dnorm(0,10),
   beta_mu_slope_temp_waves ~ dnorm(0,10),
+  beta_mu_slope_temp_lat ~ dnorm(0,10),
   beta_mu_slope_temp_waves_lat ~ dnorm(0,10),
   
   c(beta_int,beta_slope_year, beta_slope_temp, 
@@ -135,7 +141,7 @@ kelp_lat_global_mod <- alist(
 )
 
 
-kelp_lat_global_fit <- map2stan(kelp_mod, data=kelp_data_to_fit %>% mutate(Group = "World"), 
+kelp_lat_global_fit <- map2stan(kelp_lat_global_mod, data=kelp_data_to_fit %>% mutate(Group = "World"), 
                            chains=4, cores=4,
                            constraints=list(sd_e = "lower=0.000001, upper= 5"), 
                            start=list(sd_e = rep(1,length(unique(kelp_data$Study))),
