@@ -9,16 +9,18 @@ kelp_slopes_merged <- read.csv("../derived_data/kelp_slopes_merged.csv", strings
   mutate(Duration = maxYear - minYear)
 
 ####Show duration effect
+jpeg("../figures/duration_slopes.jpg", height=600, width=800, type="quartz")
 ggplot(data=kelp_slopes_merged, 
        mapping=aes(x=Duration, y=mean, 
                    ymin=lower_0.9,
                    ymax=upper_0.9)) +
   geom_pointrange(position=position_jitter(height=0, width=1),
-                  alpha=0.7) +
-  theme_bw() +
+                  alpha=0.7, size=1) +
+  theme_bw(base_size=20) +
   geom_hline(color="red", lwd=0.7, lty=2, yintercept=0) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
   xlab("Duration (Years)")
+dev.off()
 
 #show decline in variation
 ggplot(data=kelp_slopes_merged, 
@@ -80,35 +82,52 @@ all_factors_mod
 qplot(maxTempChangeAnnualSample,
       mean, color=Study, group="1", 
       data=ksm %>% filter(DurationBreaks=="1 - 6 years")) +
-  theme_bw(base_size=17) +
+  theme_bw(base_size=22) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
-  xlab("\nSlope of Annual Change in Maximum Temperature During Sample Period") +
+  xlab("\nSlope of Annual Change in Maximum Temperature\nDuring Sample Period") +
   facet_grid(DurationBreaks ~ LatBreaks) +
-  stat_smooth(method="lm") +
+  stat_smooth(method="lm", lwd=2, color="black") +
   scale_color_discrete(guide="none")
 
 #long-term
 qplot(maxTempChangeAnnualSample,
       mean, color=Study, group="1", 
       data=ksm %>% filter(DurationBreaks!="1 - 6 years")) +
-  theme_bw(base_size=17) +
+  theme_bw(base_size=22) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
-  xlab("\nSlope of Annual Change in Maximum Temperature During Sample Period") +
+  xlab("\nSlope of Annual Change in Maximum Temperature\nDuring Sample Period") +
   facet_grid(DurationBreaks ~ LatBreaks) +
-  stat_smooth(method="lm") +
+  stat_smooth(method="lm", lwd=2, color="black") +
   scale_color_discrete(guide="none")
+
+#check something
+ksm %>% filter(DurationBreaks!="1 - 6 years",
+               LatBreaks == "40 - 71 N or S",
+               maxTempChangeAnnualSample>0.05) 
 
 
 ### Plot results for waves
 qplot(maxWaveChangeAnnualSample,
       mean, color=Study, group="1", 
-       data=ksm) +
+       data = ksm %>% filter(DurationBreaks=="1 - 6 years")) +
   scale_color_gradientn(colors=RColorBrewer::brewer.pal(7,"RdBu")) +
-  theme_bw(base_size=17) +
+  theme_bw(base_size=22) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
-  xlab("\nSlope of Annual Change in 90th Percentile Wave Height (m) During Sample Period") +
+  xlab("\nSlope of Annual Change in 90th Percentile\nWave Height (m) During Sample Period") +
   facet_grid(DurationBreaks ~ LatBreaks) +
-  stat_smooth(method="lm")+
+  stat_smooth(method="lm", lwd=2, color="black")+
+  scale_color_discrete(guide="none")
+
+
+qplot(maxWaveChangeAnnualSample,
+      mean, color=Study, group="1", 
+      data=ksm %>% filter(DurationBreaks!="1 - 6 years")) +
+  scale_color_gradientn(colors=RColorBrewer::brewer.pal(7,"RdBu")) +
+  theme_bw(base_size=22) +
+  ylab("Percent Change in\nStandardized Kelp per Year") +
+  xlab("\nSlope of Annual Change in 90th Percentile\nWave Height (m) During Sample Period") +
+  facet_grid(DurationBreaks ~ LatBreaks) +
+  stat_smooth(method="lm", lwd=2, color="black")+
   scale_color_discrete(guide="none")
 
 
@@ -132,20 +151,29 @@ kst$LatBreaks <- paste0(kst$LatBreaks, " N or S")
 qplot(maxTempChangeAnnualSample,
       mean, color=Study, group="1", 
       data=kst %>% filter(DurationBreaks=="1 - 20 years")) +
-  theme_bw(base_size=17) +
+  theme_bw(base_size=22) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
-  xlab("\nSlope of Annual Change in Maximum Temperature During Sample Period") +
+  xlab("\nSlope of Annual Change in 90th Percentile Temperature\nDuring Sample Period") +
   facet_grid(DurationBreaks ~ LatBreaks, scale="free_x") +
-  stat_smooth(method="lm") +
+  stat_smooth(method="lm", color="black", lwd=2) +
   scale_color_discrete(guide="none")
+
+
+kst %>% filter(DurationBreaks=="1 - 20 years",
+               LatBreaks!="20 - 40 N or S") %>%
+  group_by(Study) %>% dplyr::slice(1L) %>% ungroup() %>%
+  filter(maxTempChangeAnnualSample > 0.05) %>%
+  select(Study)
 
 qplot(maxTempChangeAnnualSample,
       mean, color=Study, group="1",
       data=kst %>% filter(DurationBreaks!="1 - 20 years")) +
-  theme_bw(base_size=17) +
+  theme_bw(base_size=22) +
   ylab("Percent Change in\nStandardized Kelp per Year") +
-  xlab("\nSlope of Annual Change in Maximum Temperature During Sample Period") +
+  xlab("\nSlope of Annual Change in 90th Percentile Temperature\nDuring Sample Period") +
   facet_grid(DurationBreaks ~ LatBreaks, scale="free_x") +
-  stat_smooth(method="lm") +
+  stat_smooth(method="lm", color="black", lwd=2) +
   scale_color_discrete(guide="none")
 
+kst %>% filter(DurationBreaks!="1 - 20 years",
+               LatBreaks=="20 - 40 N or S")
