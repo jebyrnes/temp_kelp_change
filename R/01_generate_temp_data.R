@@ -20,6 +20,7 @@ ull_points <- SpatialPoints(cbind(unique_lat_long$Longitude, unique_lat_long$Lat
 
 ###### 3) Load and rasterize HADSST data set from 1950 - 2013
 hadsst <- raster::brick("~/Dropbox/src/HADSST/HadISST_sst.nc")
+#hadsst <- raster::brick("~/Dropbox/src/HADSST/HadISST_ice.nc")
 raster::NAvalue(hadsst) <- -1000 #make sure we don't have any super small NAs
 yearIDx <- which(chron::years(hadsst@z$Date) %in% 1950:2013)
 hadsst_subset <- raster::subset(hadsst, names(hadsst)[yearIDx]) 
@@ -92,6 +93,10 @@ hadsst_kelp <- ht %>%
   mutate(Year = year(parse_date_time(DateName, orders="ymd")))# %>%
 #  mutate(tempC=ifelse(tempC == -1000, NA, tempC))
   
+######FOR ICE
+#hadsst_kelp <- hadsst_kelp %>%
+#  rename(ice = tempC)
+#write.csv(hadsst_kelp, "../derived_data/hadice_at_latlongs.csv", row.names=F)
 
 ###### 5) Write out temp kelp data as an intermediate step
 write.csv(hadsst_kelp, "../derived_data/hadsst_at_latlongs.csv", row.names=F)
