@@ -95,7 +95,7 @@ hadsst_kelp <- ht %>%
   
 ######FOR ICE
 #hadsst_kelp <- hadsst_kelp %>%
-#  rename(ice_conc = ice)
+#  rename(ice_conc = tempC)
 #write.csv(hadsst_kelp, "../derived_data/hadice_at_latlongs.csv", row.names=F)
 
 ###### 5) Write out temp kelp data as an intermediate step
