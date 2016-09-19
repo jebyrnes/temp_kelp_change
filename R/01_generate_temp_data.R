@@ -6,7 +6,7 @@ library(tidyr)
 library(lubridate)
 
 ###### 1) Load the slope data file and raw data file
-raw_data <- read.csv("../../temporal_change/github_repo/05_HLM_analysis_code/formatted_data_3years.csv", stringsAsFactors=F) %>%
+raw_data <- read.csv("../../temporal_change/github_repo/05_HLM_analysis_code/formatted_data_3points.csv", stringsAsFactors=F) %>%
   arrange(StudySite) 
 
 ###### 2) Extract unique lat/long info from raw data
@@ -29,6 +29,7 @@ hadsst_subset <- raster::subset(hadsst, names(hadsst)[yearIDx])
 #Based on answer from
 # from http://stackoverflow.com/questions/27562076/if-raster-value-na-search-and-extract-the-nearest-non-na-pixel/39539718#39539718
 r <- hadsst_subset@layers[[length(hadsst_subset@layers)]]
+r <- hadsst_subset@layers[[1]]
 r <- readAll(r)
 
 non_na_cells <- 
@@ -71,10 +72,11 @@ as.data.frame(hadsst_kelp[which(hadsst_kelp$tempC>100),])
 #  rename(ice_conc = tempC)
 #write.csv(hadsst_kelp, "../derived_data/hadice_at_latlongs.csv", row.names=F)
 
-###### 5) Write out temp kelp data as an intermediate step
+###### 6) Write out temp kelp data 
 
-hadsst_kelp_clean <- hadsst_kelp %>%
-  select(-cell, -non_na_cell)
+hadsst_kelp_clean <- hadsst_kelp %>% ungroup() %>%
+  dplyr::select(-non_na_cell)
+
 write.csv(hadsst_kelp_clean, "../derived_data/hadsst_at_latlongs.csv", row.names=F)
 
 
