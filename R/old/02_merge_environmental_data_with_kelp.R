@@ -158,9 +158,8 @@ hadsst_trends_long <- envt_annual %>%
 ###### 5) Merge both temp data sets with slopes & raw data
 siteTab <- raw_data %>%
   group_by(Latitude, Longitude, Study, StudySite, trajectory_ID) %>%
-  slice(1L) %>%
+  dplyr::summarise(maxYear = max(Year), minYear = min(Year)) %>%
   ungroup() %>%
-  dplyr::select(Latitude, Longitude, Study, StudySite, trajectory_ID) %>%
   mutate(SiteName = paste0(StudySite, ":", Study))
 
 kelp_slopes_merged <- left_join(kelp_slopes, 
