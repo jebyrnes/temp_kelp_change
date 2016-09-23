@@ -10,6 +10,8 @@ raw_data <- read_csv("../../temporal_change/github_repo/05_HLM_analysis_code/for
   dplyr::rename(Year=year) %>%
   mutate(SiteName = paste(StudySite, Study, sep=":")) 
 
+write_csv(raw_data, "../raw_data/raw_data.csv")
+
 hadsst_kelp <- read_csv("../derived_data/hadsst_at_latlongs.csv") %>%
   mutate(DateName = lubridate::parse_date_time(DateName, orders="ymd"))
 
