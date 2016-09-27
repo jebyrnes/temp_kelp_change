@@ -5,28 +5,53 @@ library(broom)
 library(readxl)
 
 #### 1) Load the different pieces of the wave timeseries
-unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries.xls", sheet=2)
+unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=2)
+#unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries.xls", sheet=2)
+#unique_lat_long_tab2 <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=2)
 
 #Unique coordinates in the data
-gow_coords <- read_excel("../wave_data_reguero/timeseries.xls", sheet=3)
+gow_coords <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=3)
 gow_coords_names <- paste("X", gow_coords$GOWLon, gow_coords$GOWLat, sep="_")
+
+
 
 ## Most of the data uses the same format, so, here's a function to parse it
 parse_wave_data <- function(sheet, month=FALSE){
   wave_col_name <- c("Year", "Month", gow_coords_names)
   if(!month) wave_col_name <- wave_col_name[-2]
   
-  wd <- read_excel("../wave_data_reguero/timeseries.xls", sheet=sheet, 
+  wd <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=sheet, 
              col_names=wave_col_name) 
   
   if(month){
-    wd <- wd %>% gather(gow_coords, measurement, -Year, -Month)
+    
+    #forgive this hack - but something odd was happening with tidyr
+    #hopefully it will be unnecessary once my issue on github
+    #is resolved
+    nameFrame <- tibble(gow_coords = names(wd)[-c(1:2)], 
+                        newName = paste("X", 1:(ncol(wd)-2), sep="_"))
+    
+    names(wd) <- c("Year", "Month", nameFrame$newName)
+    wd <- wd %>% gather(newName, measurement, -Year, -Month) %>%
+      left_join(nameFrame) %>%
+      dplyr::select(-newName)
+    
+   # wd <- wd %>% gather(gow_coords, measurement, -Year, -Month)
   }else{
-    wd <- wd %>% gather(gow_coords, measurement, -Year)
+    
+    nameFrame <- tibble(gow_coords = names(wd)[-1], 
+                        newName = paste("X", 1:(ncol(wd)-1), sep="_"))
+    
+    names(wd) <- c("Year", nameFrame$newName)
+    wd <- gather(wd, newName, measurement, -Year) %>%
+      left_join(nameFrame) %>%
+      dplyr::select(-newName)
+    
+#    wd <- wd %>% gather(gow_coords, measurement, -Year)
   }
   
   wd %>%
-    mutate(gow_coords =gsub("X_", "", gow_coords)) %>%
+    mutate(gow_coords = gsub("X_", "", gow_coords)) %>%
     separate(gow_coords, c("GOWLon", "GOWLat"), "_") %>%
     mutate(GOWLon = as.numeric(GOWLon), GOWLat = as.numeric(GOWLat))
   
