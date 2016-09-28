@@ -7,7 +7,11 @@ library(readxl)
 #### 1) Load the different pieces of the wave timeseries
 unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=2)
 #unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries.xls", sheet=2)
-#unique_lat_long_tab2 <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=2)
+#unique_lat_long_tab2 <- read_excel("../wave_data_reguero/timeseries.xls", sheet=2)
+
+
+#unique_lat_long_tab
+#lat_long <- unique(paste("X", unique_lat_long_tab$LonGOW, unique_lat_long_tab$LatGOW, sep="_"))
 
 #Unique coordinates in the data
 gow_coords <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=3)
@@ -58,23 +62,23 @@ parse_wave_data <- function(sheet, month=FALSE){
 }
 
 annual_mean_wave_energy <- parse_wave_data(sheet = 4) %>%
-  rename(mean_wave_energy = measurement)
+  dplyr::rename(mean_wave_energy = measurement)
 
 annual_mean_wave_height <- parse_wave_data(sheet = 5) %>%
-  rename(mean_wave_height = measurement)
+  dplyr::rename(mean_wave_height = measurement)
 
 monthly_mean_wave_energy <- parse_wave_data(sheet = 6, month=TRUE) 
 
 annual_max_wave_energy <- monthly_mean_wave_energy %>%
   group_by(Year, GOWLon, GOWLat) %>%
-  summarise(max_mean_wave_energy = max(measurement, na.rm=T),
+  dplyr::summarise(max_mean_wave_energy = max(measurement, na.rm=T),
             sd_mean_wave_energy = sd(measurement, na.rm=T))
 
 monthly_sum_wave_energy <- parse_wave_data(sheet = 7, month=TRUE) 
 
 sum_wave_energy <- monthly_sum_wave_energy %>%
   group_by(Year, GOWLon, GOWLat) %>%
-  summarise(max_sum_wave_energy = max(measurement, na.rm=T),
+  dplyr::summarise(max_sum_wave_energy = max(measurement, na.rm=T),
             total_wave_energy = sum(measurement, na.rm=T),
             sd_sum_wave_energy = sd(measurement, na.rm=T))
 
@@ -82,7 +86,7 @@ monthly_max_wave_height <- parse_wave_data(sheet = 8, month=TRUE)
 
 annual_max_wave_height <- monthly_max_wave_height %>%
   group_by(Year, GOWLon, GOWLat) %>%
-  summarise(max_wave_height = max(measurement, na.rm=T),
+  dplyr::summarise(max_wave_height = max(measurement, na.rm=T),
             sd_max_wave_height = sd(measurement, na.rm=T))
 
 
@@ -113,10 +117,10 @@ wave_data <- left_join(
     left_join(annual_mean_wave_energy, annual_mean_wave_height),
     left_join(annual_max_wave_energy, sum_wave_energy)),
   annual_max_wave_height) %>%
-  rename(LonGOW = GOWLon, LatGOW = GOWLat)
+  dplyr::rename(LonGOW = GOWLon, LatGOW = GOWLat)
 
 wave_data_full <- left_join(unique_lat_long_tab, wave_data) %>%
-  rename(Latitude = `orig Lat`, Longitude = `orig Lon`)
+  dplyr::rename(Latitude = `orig Lat`, Longitude = `orig Lon`)
 # Expand with original lat/long pairs
 
 ##### 3) Load the unique lat/longs from kelp and merge with wave data
@@ -133,7 +137,7 @@ rd_wave_slopes <- rd_wave %>%
          mean_wave_energy:sd_max_wave_height) %>%
   filter(!is.na(value)) %>% #FOR NOW
   #Group it by variable and fit a lm to extract coefficients
-  group_by(SiteName, variable) %>%
+  group_by(SiteName, Latitude, Longitude, variable) %>%
   nest() %>% #
   mutate(mod = purrr::map(data, ~lm(value ~ Year, data=.)),
          out = mod %>% purrr::map(broom::tidy)) %>%
@@ -144,7 +148,7 @@ rd_wave_slopes <- rd_wave %>%
   
   #OK, we now have to reshape the data to a wide format where
   #each variable gets a set of columns - we start by further gathering
-  gather(new_col, value, -SiteName, -variable, -term) %>%
+  gather(new_col, value, -SiteName, -Latitude, -Longitude, -variable, -term) %>%
   unite(new_col, variable, new_col, sep="_") %>%
   dplyr::select(-term) %>%
   spread(new_col, value)
@@ -154,6 +158,13 @@ rd_wave_slopes <- rd_wave %>%
 merged_slopes_temp <- read_csv("../derived_data/kelp_slopes_with_temp.csv")
 
 merged_slopes <- left_join(merged_slopes_temp, rd_wave_slopes)
+
+anti_join(merged_slopes_temp, rd_wave_slopes)$SiteName
+
+merged_slopes[which(is.na(merged_slopes$max_mean_wave_energy_estimate)),]$SiteName
+merged_slopes[which(is.na(merged_slopes$max_mean_wave_energy_estimate)),]$Latitude
+merged_slopes[which(is.na(merged_slopes$max_mean_wave_energy_estimate)),]$Longitude
+#rd_wave_slopes$SiteName[which(!(rd_wave_slopes$SiteName %in% merged_slopes_temp$SiteName))]
 
 ##### 6) Write it all out
 write_csv(merged_slopes,  "../derived_data/kelp_slopes_with_temp_waves.csv")
