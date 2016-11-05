@@ -4,24 +4,31 @@ library(purrr)
 library(raster)
 library(tidyr)
 library(lubridate)
+library(sp)
 
 ###### 1) Load the slope data file and raw data file
-raw_data <- read.csv("../../temporal_change/github_repo/05_HLM_analysis_code/formatted_data_3points.csv", stringsAsFactors=F) %>%
-  arrange(StudySite) 
+#the raw data with a new column that can join on the kelp_slopes
+raw_data <- read_csv("../../temporal_change/github_repo/05_HLM_analysis_code/formatted_data_3points.csv") %>%
+  arrange(StudySite) %>%
+  dplyr::rename(Year=year) %>%
+  mutate(SiteName = paste(StudySite, Study, sep=":")) 
+
+write_csv(raw_data, "../raw_data/raw_data.csv")
 
 ###### 2) Extract unique lat/long info from raw data
 unique_lat_long <- raw_data %>%
   group_by(Latitude, Longitude) %>%
-  summarise(len=length(unique(trajectory_ID)))
+  summarise(len=length(unique(trajectory_ID))) %>%
+  ungroup()
 
 ull_points <- SpatialPoints(cbind(unique_lat_long$Longitude, unique_lat_long$Latitude),
                             proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"))
 
-###### 3) Load and rasterize HADSST data set from 1950 - 2013
+###### 3) Load and rasterize HADSST data set from 1950 - 2015
 hadsst <- raster::brick("~/Dropbox/src/HADSST/HadISST_sst.nc")
 #hadsst <- raster::brick("~/Dropbox/src/HADSST/HadISST_ice.nc")
 raster::NAvalue(hadsst) <- -1000 #make sure we don't have any super small NAs
-yearIDx <- which(chron::years(hadsst@z$Date) %in% 1950:2013)
+yearIDx <- which(chron::years(hadsst@z$Date) %in% 1950:2015)
 #hadsst_subset <- stack(hadsst)
 hadsst_subset <- raster::subset(hadsst, names(hadsst)[yearIDx]) 
 
@@ -74,8 +81,8 @@ as.data.frame(hadsst_kelp[which(hadsst_kelp$tempC>100),])
 
 ###### 6) Write out temp kelp data 
 
-hadsst_kelp_clean <- hadsst_kelp %>% ungroup() %>%
-  dplyr::select(-non_na_cell)
+hadsst_kelp_clean <- hadsst_kelp %>% ungroup()# %>%
+  #dplyr::select(-non_na_cell)
 
 write.csv(hadsst_kelp_clean, "../derived_data/hadsst_at_latlongs.csv", row.names=F)
 
