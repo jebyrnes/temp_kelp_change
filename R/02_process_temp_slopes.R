@@ -5,12 +5,8 @@ library(broom)
 
 ###### 1) Load the slope data file and raw data file
 #the raw data with a new column that can join on the kelp_slopes
-raw_data <- read_csv("../../temporal_change/github_repo/05_HLM_analysis_code/formatted_data_3points.csv") %>%
-  arrange(StudySite) %>%
-  dplyr::rename(Year=year) %>%
-  mutate(SiteName = paste(StudySite, Study, sep=":")) 
+raw_data <- read_csv("../raw_data/raw_data.csv") 
 
-write_csv(raw_data, "../raw_data/raw_data.csv")
 
 hadsst_kelp <- read_csv("../derived_data/hadsst_at_latlongs.csv") %>%
   mutate(DateName = lubridate::parse_date_time(DateName, orders="ymd"))
