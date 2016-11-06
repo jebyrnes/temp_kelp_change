@@ -4,8 +4,11 @@ library(tidyr)
 library(broom)
 library(readxl)
 
+filename <- "../wave_data_reguero/timeseries_v2.xls"
+
 #### 1) Load the different pieces of the wave timeseries
-unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=2)
+unique_lat_long_tab <- read_excel(filename, sheet=2) #updated nov 2nd
+#unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=2)
 #unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries.xls", sheet=2)
 #unique_lat_long_tab2 <- read_excel("../wave_data_reguero/timeseries.xls", sheet=2)
 
@@ -14,7 +17,7 @@ unique_lat_long_tab <- read_excel("../wave_data_reguero/timeseries_new_points.xl
 #lat_long <- unique(paste("X", unique_lat_long_tab$LonGOW, unique_lat_long_tab$LatGOW, sep="_"))
 
 #Unique coordinates in the data
-gow_coords <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=3)
+gow_coords <- read_excel(filename, sheet=3)
 gow_coords_names <- paste("X", gow_coords$GOWLon, gow_coords$GOWLat, sep="_")
 
 
@@ -24,7 +27,7 @@ parse_wave_data <- function(sheet, month=FALSE){
   wave_col_name <- c("Year", "Month", gow_coords_names)
   if(!month) wave_col_name <- wave_col_name[-2]
   
-  wd <- read_excel("../wave_data_reguero/timeseries_new_points.xls", sheet=sheet, 
+  wd <- read_excel(filename, sheet=sheet, 
              col_names=wave_col_name) 
   
   if(month){
@@ -67,14 +70,19 @@ annual_mean_wave_energy <- parse_wave_data(sheet = 4) %>%
 annual_mean_wave_height <- parse_wave_data(sheet = 5) %>%
   dplyr::rename(mean_wave_height = measurement)
 
-monthly_mean_wave_energy <- parse_wave_data(sheet = 6, month=TRUE) 
+annual_q95_wave_height <- parse_wave_data(sheet = 6) %>%
+  dplyr::rename(q95_wave_height = measurement)
+
+
+monthly_mean_wave_energy <- parse_wave_data(sheet = 7, month=TRUE) 
+
+monthly_sum_wave_energy <- parse_wave_data(sheet = 8, month=TRUE) 
 
 annual_max_wave_energy <- monthly_mean_wave_energy %>%
   group_by(Year, GOWLon, GOWLat) %>%
   dplyr::summarise(max_mean_wave_energy = max(measurement, na.rm=T),
             sd_mean_wave_energy = sd(measurement, na.rm=T))
 
-monthly_sum_wave_energy <- parse_wave_data(sheet = 7, month=TRUE) 
 
 sum_wave_energy <- monthly_sum_wave_energy %>%
   group_by(Year, GOWLon, GOWLat) %>%
@@ -82,7 +90,7 @@ sum_wave_energy <- monthly_sum_wave_energy %>%
             total_wave_energy = sum(measurement, na.rm=T),
             sd_sum_wave_energy = sd(measurement, na.rm=T))
 
-monthly_max_wave_height <- parse_wave_data(sheet = 8, month=TRUE) 
+monthly_max_wave_height <- parse_wave_data(sheet = 9, month=TRUE) 
 
 annual_max_wave_height <- monthly_max_wave_height %>%
   group_by(Year, GOWLon, GOWLat) %>%
@@ -116,7 +124,7 @@ wave_data <- left_join(
   left_join(
     left_join(annual_mean_wave_energy, annual_mean_wave_height),
     left_join(annual_max_wave_energy, sum_wave_energy)),
-  annual_max_wave_height) %>%
+  left_join(annual_max_wave_height, annual_q95_wave_height)) %>%
   dplyr::rename(LonGOW = GOWLon, LatGOW = GOWLat)
 
 wave_data_full <- left_join(unique_lat_long_tab, wave_data) %>%
@@ -134,7 +142,7 @@ rd_wave_slopes <- rd_wave %>%
   #Gather up the data in such a way that each variable
   #can be split by row
   gather(variable, value,
-         mean_wave_energy:sd_max_wave_height) %>%
+         mean_wave_energy:q95_wave_height) %>%
   filter(!is.na(value)) %>% #FOR NOW
   #Group it by variable and fit a lm to extract coefficients
   group_by(SiteName, Latitude, Longitude, variable) %>%
