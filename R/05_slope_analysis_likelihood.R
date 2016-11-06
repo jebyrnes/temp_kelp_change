@@ -75,11 +75,23 @@ qplot(max_temp_slope_estimate,mean, data=kelp_slopes_merged,  geom="jitter",
 ###### REAL META-ANALYSIS
 
 all_factors_mod <- rma.mv(mean, V=se^2, mods = ~ has_canopy*
-                            max_wave_height_estimate*max_temp_slope_estimate*I(abs(Latitude)), 
+                            max_wave_height_estimate*max_temp_slope_estimate*I(abs(Latitude))-1, 
              data=ksm, random =~ 1 |Study)
 
 all_factors_mod
 
+ctab <- coef(summary(all_factors_mod))
+ctab$coef_name <- factor(rownames(ctab), levels=rev(rownames(ctab)))
+ctab$sig <- ctab$pval <= 0.05
+
+ggplot(ctab, mapping=aes(x=coef_name,
+                         y = estimate,
+                         ymin = ci.lb,
+                         ymax = ci.ub,
+                         color=sig)) +
+  geom_pointrange() +
+  geom_hline(yintercept=0, lty=2) +
+  coord_flip()
 
 ### Plot results for temperature
 ksm <- ksm %>% 
