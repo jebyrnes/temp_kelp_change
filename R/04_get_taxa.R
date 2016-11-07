@@ -21,7 +21,9 @@ raw_data_info <- read_csv("../raw_data/raw_data.csv") %>%
             n = n()) %>%
   ungroup()
 
-kelp_slopes_merged <- right_join(raw_data_info, kelp_slopes)
+kelp_slopes_merged <- right_join(raw_data_info, kelp_slopes) %>%
+  #deal with a few dropped study names
+  mutate(Study = ifelse(is.na(Study), gsub("(.*)\\:", "", SiteName), Study))
 
 #
 taxa <- read_csv("../raw_data/taxa.csv") %>%
@@ -72,6 +74,10 @@ kelp_slopes_merged2 <- kelp_slopes_merged %>%
 
 
 kelp_slopes_merged_canopy <- left_join(kelp_slopes_merged2, single_multi)
+
+#debug
+anti_join(kelp_slopes_merged2, single_multi)$SiteName
+
 
 #something with norway characters
 kelp_slopes_merged_canopy$has_canopy[which(kelp_slopes_merged_canopy$Study=="norway_moy_christie_with_Åsen_2")] <- "no canopy"
