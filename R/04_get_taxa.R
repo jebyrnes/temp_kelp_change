@@ -17,10 +17,11 @@ raw_data_info <- read_csv("../raw_data/raw_data.csv") %>%
             Study = Study[1],
             Latitude = Latitude[1],
             Longitude = Longitude[1],
-            focalUnit = focalUnit[1]) %>%
+            focalUnit = focalUnit[1],
+            n = n()) %>%
   ungroup()
 
-kelp_slopes_merged <- left_join(kelp_slopes, raw_data_info)
+kelp_slopes_merged <- right_join(raw_data_info, kelp_slopes)
 
 #
 taxa <- read_csv("../raw_data/taxa.csv") %>%
