@@ -143,7 +143,7 @@ rd_wave_slopes <- rd_wave %>%
   #can be split by row
   gather(variable, value,
          mean_wave_energy:q95_wave_height) %>%
-  filter(!is.na(value)) %>% #FOR NOW
+  filter(!is.na(value)) %>% #FOR NOW - UGH
   #Group it by variable and fit a lm to extract coefficients
   group_by(SiteName, Latitude, Longitude, variable) %>%
   nest() %>% #
