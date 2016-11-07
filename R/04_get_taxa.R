@@ -1,6 +1,7 @@
 library(readr)
 library(dplyr)
 library(purrr)
+library(meowR)
 
 #read in the kelp slopes data
 kelp_slopes <- read_csv("../derived_data/kelp_slopes_with_temp_waves.csv")
@@ -8,7 +9,7 @@ kelp_slopes <- read_csv("../derived_data/kelp_slopes_with_temp_waves.csv")
 #Merge with envt info from kelp raw data
 raw_data_info <- read_csv("../raw_data/raw_data.csv") %>%
   group_by(SiteName) %>%
-  summarize(Duration = max(Year)- min(Year),
+  dplyr::summarize(Duration = max(Year)- min(Year),
             max_year = max(Year),
             min_year = min(Year),
             mean_Depth = mean_Depth[1],
@@ -18,7 +19,8 @@ raw_data_info <- read_csv("../raw_data/raw_data.csv") %>%
             Latitude = Latitude[1],
             Longitude = Longitude[1],
             focalUnit = focalUnit[1],
-            n = n()) %>%
+            ecoregion=ECOREGION[1],
+            n = length(ECOREGION)) %>%
   ungroup()
 
 kelp_slopes_merged <- right_join(raw_data_info, kelp_slopes) %>%
