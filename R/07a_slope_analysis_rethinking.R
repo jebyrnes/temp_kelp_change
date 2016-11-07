@@ -14,22 +14,21 @@ ksm <- kelp_slopes_merged %>%
   filter(!is.na(max_wave_height_estimate)) %>%
   filter(!is.na(max_wave_height_std.error)) %>%
   filter(!is.na(max_temp_slope_estimate)) %>%
-  filter(!is.na(has_canopy)) %>%
   dplyr::rename(slope = mean, slope_se = se,
-         waves = max_wave_height_estimate,
-         se_waves = max_wave_height_std.error,
-         temp = max_temp_slope_estimate,
-         se_temp = max_temp_slope_std.error) %>%
+                waves = max_wave_height_estimate,
+                se_waves = max_wave_height_std.error,
+                temp = max_temp_slope_estimate,
+                se_temp = max_temp_slope_std.error) %>%
   mutate(abs_lat = abs(Latitude)) %>%
   #standardize to speed convergence
   mutate(abs_lat = as.numeric(scale(abs_lat)),
-          Duration=as.numeric(scale(Duration)),
-          se_waves_scale=se_waves/sd(waves),
-          se_temp_scale=se_temp/sd(temp),
-          waves_scale=as.numeric(scale(waves)),
-          temp_scale=as.numeric(scale(temp)),
-          nocanopy = as.numeric(factor(has_canopy)) - 1,
-          studyIDX = as.numeric(factor(Study)))
+         Duration=as.numeric(scale(Duration)),
+         se_waves_scale=se_waves/sd(waves),
+         se_temp_scale=se_temp/sd(temp),
+         waves_scale=as.numeric(scale(waves)),
+         temp_scale=as.numeric(scale(temp)),
+         nocanopy = as.numeric(factor(has_canopy)) - 1,
+         studyIDX = as.numeric(factor(Study)))
 
 #Make a clean version that won't cause STAN to barf
 ksm_clean <- as.data.frame(ksm %>%
@@ -70,7 +69,7 @@ kelp_slope_mod <- alist(
   slope ~ dnorm(slope_est, slope_se),
   waves_scale ~ dnorm(waves_est, se_waves_scale),
   temp_scale ~ dnorm(temp_est, se_temp_scale),
-
+  
   #priors
   b0 ~ dnorm(0,10),
   bC ~ dnorm(0,10),
@@ -102,7 +101,7 @@ kelp_slope_fit <-
            start=list(temp_est = ksm_clean$temp_scale,
                       waves_est = ksm_clean$waves_scale,
                       slope_est = ksm_clean$slope),
-          # iter=10, warmup=10, #test
+           # iter=10, warmup=10, #test
            iter=10000, #real
            warmup = 5000, #real
            control = list(adapt_delta=0.95))
@@ -139,7 +138,7 @@ kelp_slope_nolat_mod <-alist(
     bCT * nocanopy * temp_est[i] +
     bWT * waves_est[i] * temp_est[i] +
     bCWT * nocanopy * waves_est[i] * temp_est[i], 
-
+  
   #observation error
   slope ~ dnorm(slope_est, slope_se),
   waves_scale ~ dnorm(waves_est, se_waves_scale),
