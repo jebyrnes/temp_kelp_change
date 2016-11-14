@@ -14,7 +14,7 @@ hadsst_kelp <- read_csv("../derived_data/hadsst_at_latlongs.csv") %>%
 #Sift the temp data down to annual mean and max, and within year SD
 hadsst_kelp_annual <- hadsst_kelp %>%
   group_by(Latitude, Longitude, cell, Year) %>%
-  summarize(mean_tempC = mean(tempC, na.rm=T),
+  dplyr::summarize(mean_tempC = mean(tempC, na.rm=T),
             max_tempC = max(tempC, na.rm=T), 
             sd_tempC = sd(tempC, na.rm=T))
 
@@ -46,7 +46,7 @@ sample_temp_slopes <- merged_rd_temp %>%
 #For each study year range/cell combo, average w/in year temporal SD of temperature
 sd_temp_slopes <- merged_rd_temp %>%
   group_by(SiteName)%>%
-  summarize(avg_sd_tempC = mean(sd_tempC, na.rm=T)) %>%
+  dplyr::summarize(avg_sd_tempC = mean(sd_tempC, na.rm=T)) %>%
   ungroup()
 
 #Merge slope info with the slopes of relationships from Krumhansl paper
