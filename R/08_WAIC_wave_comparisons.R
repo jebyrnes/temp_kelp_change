@@ -1,20 +1,23 @@
 source("./06_data_for_analysis_gen.R")
 library(brms)
+options(mc.cores = parallel::detectCores())
+
 library(ggplot2)
 
 #compare a model with versus without Duration
 ksm_init <- make_ksm(max_wave_height_estimate, max_temp_slope_estimate)
 
-all_factors_brms <- brm(slope | se(slope_se) ~ has_canopy*
-                          waves_scale*temp_scale*abs_lat_scale*Duration_scale +
-                          (1|Study), data=ksm_init)
+duration_factors_brms <- brm(slope | se(slope_se) ~ Duration_scale*has_canopy*
+                                  waves_scale*temp_scale*abs_lat_scale +
+                                  (1|Study), data=ksm_init)
 
 no_duration_factors_brms <- brm(slope | se(slope_se) ~ has_canopy*
                                   waves_scale*temp_scale*abs_lat_scale +
-                                  (1|Study), data=ksm_init %>% filter(!is.na(Duration_scale)))
+                                  (1|Study), data=ksm_init)
 
-WAIC(all_factors_brms, no_duration_factors_brms)
-
+waic(duration_factors_brms, no_duration_factors_brms)
+#Is there a duration residual?
+plot(ksm_init$Duration,residuals(no_duration_factors_brms)[,1])
 
 
 # Compare the different wave measures
@@ -28,7 +31,7 @@ fit_kelp_envt_mod <- function(...){
 }
 
 max_mean_wave_energy_mod <- fit_kelp_envt_mod(max_mean_wave_energy_estimate)
-max_wave_height_mod <- fit_kelp_envt_mod(max_wave_height_estimate)
+max_wave_height_mod <- fit_kelp_envt_mod(max_wave_height_estimate) #no_duration_factors_brms
 max_sum_wave_energy_mod <- fit_kelp_envt_mod(max_sum_wave_energy_estimate)
 mean_wave_energy_mod<- fit_kelp_envt_mod(mean_wave_energy_estimate)
 mean_wave_height_mod<- fit_kelp_envt_mod(mean_wave_height_estimate)
