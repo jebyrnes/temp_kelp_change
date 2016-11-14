@@ -135,6 +135,7 @@ wave_data_full <- left_join(unique_lat_long_tab, wave_data) %>%
 raw_data <- read_csv("../raw_data/raw_data.csv") 
 
 rd_wave <- left_join(raw_data, wave_data_full)
+#test <- anti_join(wave_data_full, raw_data) %>% group_by(id, Longitude, Latitude) %>% slice(1L)
 
 ##### 4) Calculate the sample slopes in each quantity
 
