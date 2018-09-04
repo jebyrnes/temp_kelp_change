@@ -12,6 +12,8 @@ all_factors_brms <- brm(mean | se(se) ~ has_canopy*
                           (1|Study), data=ksm_s)
 
 all_factors_brms
+
+
 #plot(marginal_effects(all_factors_brms), ask=TRUE)
 
 a <- posterior_samples(all_factors_brms)

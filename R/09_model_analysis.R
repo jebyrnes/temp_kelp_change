@@ -8,12 +8,21 @@ library(ggplot2)
 ########
 ksm_data <- make_ksm(max_wave_height_estimate, max_temp_slope_estimate)
 # 
-# mod <- brm(slope | se(slope_se) ~ has_canopy*
+# mod <- brm(slope | se(slope_se, sigma=TRUE) ~ has_canopy*
 #                                   waves_scale*temp_scale*abs_lat_scale +
 #                                   (1|Study) + (1|ecoregion), 
 #                                   data=make_ksm(max_wave_height_estimate, max_temp_slope_estimate))
-#            
-# mod_nocanopy <- brm(slope | se(slope_se) ~ 
+# 
+# mod_me <- brm(slope | se(slope_se, sigma=FALSE) ~ has_canopy*
+#                                   me(waves_scale, se_waves_scale)*
+#                                   me(temp_scale, se_temp_scale)*
+#                                   abs_lat_scale +
+#                                   (1|Study) + (1|ecoregion),
+#                                   data=make_ksm(max_wave_height_estimate, max_temp_slope_estimate) %>% filter(se_temp_scale>0) %>% filter(se_waves_scale>0) %>% mutate(has_canopy = gsub(" ", "_", has_canopy)), save_mevars=TRUE, chains=3, iter=1e6)
+# 
+# save(mod_me, file="../chain_output/fit_brms_mod_me.Rdata")
+#
+# mod_nocanopy <- brm(slope | se(slope_se, sigma=TRUE) ~ 
 #              waves_scale*temp_scale*abs_lat_scale +
 #              (1|Study) + (1|ecoregion), 
 #            data=make_ksm(max_wave_height_estimate, max_temp_slope_estimate))
@@ -212,7 +221,7 @@ ggplot(waves_low_lat_lh_temp_data %>% filter(has_canopy == "no canopy"),
 ##########
 #Plots of wave and temp coefficients as each changes
 ##########
-
+names(chains)[1:16] <- gsub("\\.", "\\:", names(chains)[1:16])
 temp_effect <- 
   data.frame(has_canopy = c("no canopy", "canopy")) %>% 
   crossing(waves_scale = seq(min(ksm_data$waves_scale), max(ksm_data$waves_scale), length.out=30)) %>%
@@ -246,9 +255,9 @@ ggplot(data=temp_effect,
   facet_wrap(~has_canopy, scale="free_y") +
   theme_bw(base_size=17) +
   geom_hline(yintercept=0, lty=2) +
-  scale_color_discrete(guide=guide_legend(title="")) +
   ylab("Standardized Effect of\nTemperature Change on Kelps") +
-  xlab("Change in Max Wave Height (m) per Decade") 
+  xlab("Change in Max Wave Height (m) per Decade") +
+  scale_color_manual(values=c("blue", "red"), guide=guide_legend(title=""))
 
 #Plot how wave effect changes with temp
   
