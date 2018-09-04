@@ -298,5 +298,69 @@ ggplot(data=temp_effect,
    ylab("Standardized Effect of\nWave Change on Kelps") +
    xlab("Change in Max Temp (C) per Decade") 
  
- 
+########
+#Counterfactual Surfaces
+########
+library(modelr)
+library(forcats)
 
+newdata <- data_grid(ksm_data,
+                     has_canopy = unique(has_canopy),
+                     waves_scale = seq(-1,1,length.out=100),
+                     temp_scale = seq(-3,3,length.out=100),
+                     # waves_scale = seq_range(waves_scale,100),
+                     # temp_scale = seq_range(temp_scale, 100),
+                     abs_lat_scale = seq_range(abs_lat_scale, 5),
+                     slope_se = median(slope_se))
+
+
+fit <- fitted(mod, newdata = newdata, nsamples = 1000, re_formula=NA)
+write.csv(cbind(newdata, fit), "../derived_data/mod_output.csv")
+
+
+fit <- read_csv("../derived_data/mod_output.csv")
+
+fit <- fit %>%
+  mutate(Change = as.character(sign(Q2.5) + sign(Q97.5))) %>%
+  mutate(waves = waves_scale * sd(ksm_data$waves) + mean(ksm_data$waves),
+         temp = temp_scale * sd(ksm_data$temp) + mean(ksm_data$temp),
+         abs_lat = round(abs_lat_scale * sd(ksm_data$abs_lat) + mean(ksm_data$abs_lat)),
+         Change = case_when(Change<0 ~ "Loss", 
+                            Change > 0 ~ "Gain",
+                           TRUE ~ "No change"),
+         Change = factor(Change, levels = c("Gain", "No change", "Loss")),
+         where = factor(abs_lat),
+         where = fct_recode(where, 
+                             "Baja,\n Peru" = "21",
+                             "Japan,\n W. Australia" = "32",
+                             "Gulf of Maine,\n Tasmania" = "43",
+                             "Northern Canada,\n Southern Chile" = "55",
+                             "Norway,\n Northern Alaska" = "66"
+                             ),
+         where = fct_rev(where),
+         has_canopy = case_when(has_canopy=="canopy" ~ "Canopy Kelps",
+                                TRUE ~ "Non-Canopy Forming Kelps")
+  )
+
+ggplot(fit %>% filter(abs(temp)<=1) %>% filter(abs(waves) <=0.5), 
+       aes(x=temp, y = waves, fill=Change, alpha=abs(Estimate))) +
+  facet_grid(where ~ has_canopy) +
+  geom_raster() +
+  scale_fill_manual(values=c("blue", "grey", "red"),
+                    guide = guide_legend("Trajectory of\nKelp Change")) +
+  theme_bw(base_size=17) +
+  theme(legend.background = element_blank(), 
+        legend.key = element_blank(), 
+        panel.background = element_blank(), 
+        panel.border = element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(), 
+        strip.background = element_blank(), 
+        plot.background = element_blank(),
+        strip.text.y = element_text(angle = 0), 
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5, size = 10)) +
+  xlab("Change in 90th Percentile Temperature (Degrees/yr)") +
+  ylab("Change in 90th Percentile Wave Heights (m/yr)") +
+  scale_alpha(guide = guide_legend("Absolute\nMagnitude\n(Std. Kelp/Year)")) 
+  
