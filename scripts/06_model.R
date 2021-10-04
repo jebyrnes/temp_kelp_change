@@ -9,16 +9,17 @@ setwd(here::here())
 
 source("scripts/05_load_data_for_analysis.R")
 
-# Model with variation by ecoregion
-mod_regional <- brm(
+# Models with variation by ecoregion ####
+mod_regional <- brm(bf(
   stdByECOREGION + 0.01 ~
     ECOREGION * (mean_temp_dev * mean_wave_energy_dev) +
     mean_wave_energy_site +
     mean_temp_site +
+    mean_temp_ecoregion +
     mean_temp_province +
-    mean_temp_realm +
     Year +
     (1 | SiteName),
+  sigma ~ focalUnit),
   family = gaussian(link = "log"),
   data = dat,
   iter = 4000,
@@ -30,15 +31,16 @@ mod_regional <- brm(
 
 
 #squared
-mod_regional <- brm(
+mod_regional <- brm(bf(
   stdByECOREGION + 0.01 ~
     ECOREGION * (poly(mean_temp_dev,2) * mean_wave_energy_dev) +
     mean_wave_energy_site +
     mean_temp_site +
+    mean_temp_ecoregion +
     mean_temp_province +
-    mean_temp_realm +
     Year +
     (1 |SiteName),
+  sigma ~ focalUnit),
   family = gaussian(link = "log"),
   data = dat,
   iter = 4000,
@@ -47,7 +49,8 @@ mod_regional <- brm(
   threads = threading(4),
   save_model = "chain_output/fit_regional_model.Rdata"
 )
-# Model with no variation by ecoregion
+
+## Models with no variation by ecoregion, but, canopy ####
 #linear
 mod_canopy_linear <- brm(bf( ln_stdByECOREGION + 0.01 ~
     (has_canopy * mean_temp_dev * mean_wave_energy_dev) +
@@ -67,7 +70,7 @@ mod_canopy_linear <- brm(bf( ln_stdByECOREGION + 0.01 ~
 )
 
 #polynomial temperature effect
-mod_canopy_linear <- brm(
+mod_canopy_quad <- brm(bf(
   ln_stdByECOREGION + 0.01 ~
     (has_canopy * poly(mean_temp_dev,2) * mean_wave_energy_dev) +
     mean_wave_energy_site +
@@ -77,6 +80,7 @@ mod_canopy_linear <- brm(
     Year +
     (poly(mean_temp_dev,2) * mean_wave_energy_dev|ECOREGION) +
     (1 | SiteName),
+  sigma ~ focalUnit),
   data = dat,
   chains = 2,
   backend = "cmdstanr",
