@@ -364,3 +364,73 @@ ggplot(fit %>% filter(abs(temp)<=1) %>% filter(abs(waves) <=0.5),
   ylab("Change in 90th Percentile Wave Heights (m/yr)") +
   scale_alpha(guide = guide_legend("Absolute\nMagnitude\n(Std. Kelp/Year)")) 
   
+
+########
+#Counterfactual Animation
+########
+library(gganimate)
+theme_set( theme_bw(base_size=17) +
+             theme(legend.background = element_blank(), 
+                   legend.key = element_blank(), 
+                   panel.background = element_blank(), 
+                   panel.border = element_blank(), 
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(), 
+                   strip.background = element_blank(), 
+                   plot.background = element_blank(),
+                   strip.text.y = element_text(angle = 0), 
+                   axis.text.x = element_text(angle = 45, hjust = 1)))
+
+fit_new <- fit %>%
+  group_by(waves, temp) %>%
+  slice(1L) %>%
+  ungroup() %>%
+  select(waves, temp) %>%
+  mutate(pointgroup = 1:n()) %>%
+  right_join(fit) %>%
+  mutate(where_nolinebreak = gsub("\n", "", as.character(where)))
+  
+
+anim <- ggplot(fit_new %>% filter(abs(temp)<=1) %>% filter(abs(waves) <=0.5) %>% filter(has_canopy=="Canopy Kelps"), 
+       aes(x=temp, y = waves, fill=Change, color=Change, 
+           alpha=abs(Estimate), group = pointgroup)) +
+  geom_raster() +
+  scale_fill_manual(values=c("blue", "grey", "red"),
+                    guide = guide_legend("Trajectory of\nKelp Change")) +
+  scale_color_manual(values=c("blue", "grey", "red"),
+                    guide = guide_legend("Trajectory of\nKelp Change")) +
+  transition_states(where_nolinebreak,10,10)+
+  enter_fade() +
+  exit_fade() +
+  xlab("Change in 90th Percentile Temperature (Degrees/yr)") +
+  ylab("Change in 90th Percentile Wave Heights (m/yr)") +
+  scale_alpha(guide = guide_legend("Absolute\nMagnitude\n(Std. Kelp/Year)")) +
+  ggtitle("Canopy forming kelps",
+          subtitle = "Location: {closest_state}")
+
+
+animate(anim, width = 900, height = 600)
+anim_save("../figures/canopy_model.gif")
+
+
+
+anim2 <- ggplot(fit_new %>% filter(abs(temp)<=1) %>% filter(abs(waves) <=0.5) %>% filter(has_canopy!="Canopy Kelps"), 
+               aes(x=temp, y = waves, fill=Change, color=Change, 
+                   alpha=abs(Estimate), group = pointgroup)) +
+  geom_raster() +
+  scale_fill_manual(values=c("blue", "grey", "red"),
+                    guide = guide_legend("Trajectory of\nKelp Change")) +
+  scale_color_manual(values=c("blue", "grey", "red"),
+                     guide = guide_legend("Trajectory of\nKelp Change")) +
+  transition_states(where_nolinebreak,30,30)+
+  enter_fade() +
+  exit_fade() +
+  xlab("Change in 90th Percentile Temperature (Degrees/yr)") +
+  ylab("Change in 90th Percentile Wave Heights (m/yr)") +
+  scale_alpha(guide = guide_legend("Absolute\nMagnitude\n(Std. Kelp/Year)")) +
+  ggtitle("Non-Canopy forming kelps",
+          subtitle = "Location: {closest_state}")
+
+
+animate(anim2, width = 900, height = 600)
+anim_save("../figures/non-canopy_model.gif")
