@@ -102,8 +102,15 @@ sum(is.na(kelp_slopes_merged_canopy$has_canopy))
 #   geom_vline(xintercept = 0)
 
 #non-tasmanian Austrlian sites problematic
-kelp_slopes_merged_canopy[which(kelp_slopes_merged_canopy$Longitude>100 & 
-                                  kelp_slopes_merged_canopy$Latitude>-40),]$has_canopy <- "no canopy"
+kelp_slopes_merged_canopy[which(kelp_slopes_merged_canopy$Longitude>100 &
+                                  kelp_slopes_merged_canopy$Longitude<160 & #NZ
+                                  kelp_slopes_merged_canopy$Latitude>-39.3 &
+                                  kelp_slopes_merged_canopy$Latitude < 50),]$has_canopy <- "no canopy"
+
+#all of south africa should be canopy.... It's E. maxima
+kelp_slopes_merged_canopy[which(kelp_slopes_merged_canopy$Latitude < 0 & 
+                                  kelp_slopes_merged_canopy$Longitude > 0 &
+                                  kelp_slopes_merged_canopy$Longitude < 40),]$has_canopy <- "canopy"
 
 #Europe has no canopy - fix that
 kelp_slopes_merged_canopy[which(kelp_slopes_merged_canopy$Longitude > -10 & 
